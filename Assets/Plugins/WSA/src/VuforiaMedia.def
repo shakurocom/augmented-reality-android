@@ -1,0 +1,26 @@
+LIBRARY
+
+EXPORTS
+   UnityPluginLoad
+   UnityPluginUnload
+   VideoPlayerInitWSA
+   VideoPlayerDeinitWSA
+   VideoPlayerLoadWSA
+   VideoPlayerUnloadWSA
+   VideoPlayerIsPlayableOnTextureWSA
+   VideoPlayerIsPlayableFullscreenWSA
+   VideoPlayerSetVideoTexturePtrWSA
+   VideoPlayerGetStatusWSA
+   VideoPlayerGetVideoWidthWSA
+   VideoPlayerGetVideoHeightWSA
+   VideoPlayerGetLengthWSA
+   VideoPlayerPlayWSA
+   VideoPlayerPauseWSA
+   VideoPlayerStopWSA
+   VideoPlayerUpdateVideoDataWSA
+   VideoPlayerSeekToWSA
+   VideoPlayerGetCurrentPositionWSA
+   VideoPlayerSetVolumeWSA
+   VideoPlayerGetCurrentBufferingPercentageWSA
+   VideoPlayerOnPauseWSA
+   GetRenderEventFunc

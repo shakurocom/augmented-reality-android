@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ==============================================================================
+            Copyright (c) 2012-2014 Qualcomm Connected Experiences, Inc.
+            All Rights Reserved.
+============================================================================== -->
+<project name="VuforiaMedia" default="vuforiamedia">
+
+    <!-- The local.properties file is created and updated by the 'android' tool.
+         It contains the path to the SDK. It should *NOT* be checked into
+         Version Control Systems. -->
+    <property file="local.properties" />
+
+    <!-- The ant.properties file can be created by you. It is only edited by the
+         'android' tool to add properties to it.
+         This is the place to change some Ant specific build properties.
+         Here are some properties you may want to change/update:
+
+         source.dir
+             The name of the source directory. Default is 'src'.
+         out.dir
+             The name of the output directory. Default is 'bin'.
+
+         For other overridable properties, look at the beginning of the rules
+         files in the SDK, at tools/ant/build.xml
+
+         Properties related to the SDK location or the project target should
+         be updated using the 'android' tool with the 'update' action.
+
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems.
+
+         -->
+    <property file="ant.properties" />
+
+    <!-- The project.properties file is created and updated by the 'android'
+         tool, as well as ADT.
+
+         This contains project specific properties such as project target, and library
+         dependencies. Lower level build properties are stored in ant.properties
+         (or in .classpath for Eclipse projects).
+
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems. -->
+    <loadproperties srcFile="project.properties" />
+
+    <!-- quick check on sdk.dir -->
+    <fail
+            message="sdk.dir is missing. Make sure to generate local.properties using 'android update project' or to inject it through an env var"
+            unless="sdk.dir"
+    />
+
+    <!-- The relative location of VuforiaMedia Java files -->
+    <!--<property name="vuforiamedia.dir" location="VuforiaMedia" />-->
+    <property name="vuforiamedia.dir" value="." />
+    <property name="vuforiamedia.absolute.dir" location="${vuforiamedia.dir}" />
+    <property name="obj.dir" value="obj" />
+    <property name="libs.dir" value="libs" />
+	
+   <!-- Native code compilation -->
+		
+	<!-- Target to compile native libraries-->
+	<property name="ndk-build" location="${ndk.dir}/ndk-build" />
+	
+    <condition property="ndk-args"
+		value="${ndk.args}"
+		else="">
+		<isset property="ndk.args" />
+	</condition>
+
+	<condition property="exe" value=".exe" else="">
+        <os family="windows" />
+    </condition>
+	<property name="bash.path" value="bash${exe}" />
+	
+	<property name="bash.args" value="" />
+
+	<target name="-qcar-native-compile">
+		<echo>Building native VuforiaMedia lib:${ndk-build} ${ndk-args}</echo>
+		<echo>${bash.path}</echo>
+        <echo>${ndk.args}</echo>
+		<exec executable="${bash.path}" failonerror="yes" dir=".">
+            <arg line="${bash.args} ${ndk-build} ${ndk-args}" />
+		</exec>
+	</target>
+
+	<target name="-qcar-artifacts">
+		<echo>Collecting VuforiaMedia Artifacts</echo>
+		<!--<mkdir dir="${out.jar.dir}" />-->
+		<delete file="VuforiaMedia.jar" quiet="true" />
+		<jar destfile="VuforiaMedia.jar"
+			basedir="${out.classes.absolute.dir}"
+			includes="com/qualcomm/VuforiaMedia/*"
+			/>
+	</target>
+
+	<property name="root.dir" value="../../" />
+	<property name="root.absolute.dir" location="${root.dir}" />  
+	
+    <target name="copy-plugin-libs">
+		<echo>Copying VuforiaMedia artifacts to plugin folder</echo>
+		<copy file="VuforiaMedia.jar" todir="../"/>
+		<copy todir="../libs/armeabi-v7a">
+			<fileset dir="libs/armeabi-v7a"/>
+		</copy>
+	</target>  
+    
+	<target name="check_priv">
+		<condition property="is.priv.java">
+			<and>
+				<equals arg1="${dev.profile}" arg2="PRIVATE" />
+				<not>
+					<equals arg1="${priv.java}" arg2="false" />
+				</not>
+			</and>
+		</condition>
+	</target>
+
+	<property name="find.path" value="find" />
+	<target name="preprocess_java" if="is.priv.java">
+		<exec executable="${find.path}" dir="${source.absolute.dir}">
+			<arg line="${source.absolute.dir} -noleaf -name &quot;*.java&quot; -exec sed &quot;s/\/\/[ \t]*Log\./Log\./&quot; -i.bak {} ;" />
+		</exec>
+	</target>
+
+	<target name="postprocess_java" if="is.priv.java">
+		<move todir="${source.absolute.dir}">
+			<fileset dir="${source.absolute.dir}">
+				<include name="**/*.bak" />
+			</fileset>
+			<mapper type="glob" from="*.bak" to="*" />
+		</move>
+	</target>	
+	
+    <!-- Builds Public VuforiaMedia native and java libraries, packaging them up for artifacts -->
+    <target name="vuforiamedia" depends="-compile, -qcar-native-compile, -qcar-artifacts, copy-plugin-libs"
+	    description="Builds the VuforiaMedia native and java libraries">
+    </target>	
+	
+    <!-- Deletes obj and lib folders that are not deleted by standard clean build -->
+    <target name="-pre-clean" description="Deletes obj and lib folders">
+		<delete dir="${obj.dir}" quiet="false" />
+		<delete dir="${libs.dir}" quiet="false" />
+	</target>
+	
+    <!-- Deletes *.meta files before building -->
+    <target name="-pre-build" description="Deletes *.meta files">
+		<delete>
+			<fileset dir="${vuforiamedia.dir}" includes="**/*.meta"/>
+		</delete>
+	</target>
+
+    <!-- Import the actual build file.
+
+         To customize existing targets, there are two options:
+         - Customize only one target:
+             - copy/paste the target into this file, *before* the
+               <import> task.
+             - customize it to your needs.
+         - Customize the whole content of build.xml
+             - copy/paste the content of the rules files (minus the top node)
+               into this file, replacing the <import> task.
+             - customize to your needs.
+
+         ***********************
+         ****** IMPORTANT ******
+         ***********************
+         In all cases you must update the value of version-tag below to read 'custom' instead of an integer,
+         in order to avoid having your file be overridden by tools such as "android update project"
+    -->
+	
+	
+	<!-- TODO: remove when Android SDK bug is fixed -->
+	<!-- This is necessary to circumvent a bug in the Android SDK Tools R20
+	http://www.stonetrip.com/developer/forum/viewtopic.php?f=43&t=26066 -->
+	<property name="renderscript.opt.level" value="O0" />
+	
+	<import file="${sdk.dir}/tools/ant/build.xml" />
+</project>
